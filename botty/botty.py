@@ -6,7 +6,7 @@ SLACK_TOKEN = os.environ["SLACK_BOT_TOKEN"]
 
 
 def send_message(client, user, message):
-	reponse = client.chat_postMessage(channel=user, text=message)
+	response = client.chat_postMessage(channel=user, text=message)
 	return response
 
 def main():
