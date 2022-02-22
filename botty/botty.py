@@ -2,7 +2,7 @@ from slack_sdk import WebClient
 import argparse
 import os
 
-SLACK_TOKEN = os.environ["SLACK_BOT_TOKEN"]
+client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 
 
 def send_message(client, user, message):
@@ -16,7 +16,6 @@ def main():
 	args = parser.parse_args()
 	if not args.user[0].startswith('@'):
 		args.user[0] = '@' + args.user[0]
-	client = WebClient(token=SLACK_TOKEN)
 	print(send_message(client, args.user[0], args.message[0]))
 
 
