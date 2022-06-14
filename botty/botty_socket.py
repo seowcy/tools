@@ -32,7 +32,7 @@ def handle_message_events(body, say):
         for k in results.keys():
             fuzzy_matching[results[k]["title"]] = fuzz.token_sort_ratio(k, recv_text.lower())
         top_5_matches = '\n'.join(["{} ({}%)".format(k,v) for k,v in sorted(fuzzy_matching.items(), reverse=True, key=lambda item: item[1])[:5]])
-        say(channel=user, text="```Received: %s\n```\n```Did you mean:\n%s```" % (recv_text, top_5_matches))
+        say(channel=user, text="```Received: %s\n```\nDid you mean:\n%s" % (recv_text, top_5_matches))
     # logger.info(body)
 
 if __name__ == "__main__":
