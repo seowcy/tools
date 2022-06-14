@@ -1,0 +1,8 @@
+﻿{
+    "unsafe use of target blank": {
+        "title": "Unsafe Use Of Target blank",
+        "desc": "When opening a new page using an HTML element with the \"target\" attribute (with any value), or with window.open() within JavaScript, the new page has some access to the original page through the window.opener object. This may allow redirection to a malicious phishing page.",
+        "impact": "An unsuspecting user might click a vulnerable legitimate-looking link, prepared by an attacker, that leads to a malicious page. The new pag that opens can redirect the original page to another malicious page and abuse the trust of the user to create a very convincing phishing attack.",
+        "mitigation": "For HTML:\n\t* Do not set the \"target\" attribute (with any value) for links created by users unless required.\n\t* If required, when using the \"target\" attribute, also set the \"rel\" attribute as \"noopener noreferrer\":\n\t\t- \"noopener\" for Chrome and Opera\n\t\t- \"noreferrer\" for Firefox and old browsers\n\t\t- No similar option for Safari\nFor JavaScript:\n\t* When invoking an untrusted new window using \"var newWindow = window.open()\", set \"nextWindow.opener=null\" before setting \"newWindow.location\" to a potentially untrusted site, such that when the new site is open in the new window, it has no access to its original \"opener\" attribute"
+    }
+}

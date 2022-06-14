@@ -15,6 +15,8 @@ with open("csharp_results.json", 'rb') as f:
     results = {**results, **json.load(f)}
 with open("java_results.json", 'rb') as f:
     results = {**results, **json.load(f)}
+with open("other_results.json", 'rb') as f:
+    results = {**results, **json.load(f)}
 
 
 @app.event("message")
