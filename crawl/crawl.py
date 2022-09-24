@@ -1,32 +1,95 @@
 from scrapy.crawler import CrawlerProcess
+from scrapy.http import Request, HtmlResponse
+from scrapy.linkextractors import LinkExtractor
+from six.moves.urllib.parse import urlparse
+from testspiders.items import Page    # https://github.com/scrapinghub/testspiders
 import argparse
 import scrapy
 import json
+import re
 
 
 class MySpider(scrapy.Spider):
-    pass
+    name="myspider"
 
-def crawl(root_url):
-	process = CrawlerProcess(settings={
-    	"FEEDS": {
-        	"items.json": {"format": "json"},
-    	},
-	})
-	process.crawl(MySpider)
-	process.start() # the script will block here until the crawling is finished
+    def __init__(self, **kw):
+        super(MySpider, self).__init__(**kw)
+        url = kw.get('url') or kw.get('domain') or 'http://scrapinghub.com/'
+        if not url.startswith('http://') and not url.startswith('https://'):
+            url = 'http://%s/' % url
+        self.url = url
+        self.allowed_domains = [re.sub(r'^www\.', '', urlparse(url).hostname)]
+        self.link_extractor = LinkExtractor()
+        self.cookies_seen = set()
+
+    def start_requests(self):
+        return [Request(self.url, callback=self.parse, dont_filter=True)]
+
+    def parse(self, response):
+        """Parse a PageItem and all requests to follow
+        @url http://www.scrapinghub.com/
+        @returns items 1 1
+        @returns requests 1
+        @scrapes url title foo
+        """
+        page = self._get_item(response)
+        r = [page]
+        r.extend(self._extract_requests(response))
+        return r
+
+    def _get_item(self, response):
+        item = Page(
+            url=response.url,
+            size=str(len(response.body)),
+            referer=response.request.headers.get('Referer'),
+        )
+        self._set_title(item, response)
+        self._set_new_cookies(item, response)
+        return item
+
+    def _extract_requests(self, response):
+        r = []
+        if isinstance(response, HtmlResponse):
+            links = self.link_extractor.extract_links(response)
+            r.extend(Request(x.url, callback=self.parse) for x in links)
+        return r
+
+    def _set_title(self, page, response):
+        if isinstance(response, HtmlResponse):
+            title = response.xpath("//title/text()").extract()
+            if title:
+                page['title'] = title[0]
+
+    def _set_new_cookies(self, page, response):
+        cookies = []
+        for cookie in [x.split(b';', 1)[0] for x in
+                       response.headers.getlist('Set-Cookie')]:
+            if cookie not in self.cookies_seen:
+                self.cookies_seen.add(cookie)
+                cookies.append(cookie)
+        if cookies:
+            page['newcookies'] = cookies
+
+
+
+def crawl(root_url, output_filename="output.json"):
+    process = CrawlerProcess(settings={
+        "FEEDS": {
+            output_filename: {"format": "json"},
+        },
+    })
+    process.crawl(MySpider, url=root_url)
+    process.start() # the script will block here until the crawling is finished
 
 def main():
-	parser = argparse.ArgumentParser(description="Crawl URL for in-scope links.")
-	parser.add_argument("root_url", metavar="root_url", type=str, nargs=1)
-	parser.add_argument("-o", "--output")
-	args = parser.parse_args()
-	results = crawl(args.root_url[0])
-	if args.output is not None:
-		with open(args.output, 'w') as f:
-			f.write(json.dumps(results, indent=4))
-	else:
-		print(results)
-
+    parser = argparse.ArgumentParser(description="Crawl URL for in-scope links.")
+    parser.add_argument("root_url", metavar="root_url", type=str, nargs=1)
+    parser.add_argument("-o", "--output")
+    args = parser.parse_args()
+    if args.output is not None:
+        crawl(args.root_url[0], args.output)
+    else:
+        crawl(args.root_url[0])
+                
 if __name__ == "__main__":
-	main()
+    main()
